@@ -94,18 +94,6 @@ pub enum ImportSelector {
     SideEffect,
     /// Style file imports (CSS, SCSS, etc.)
     Style,
-    /// Type import from index file
-    IndexType,
-    /// Type import from sibling module
-    SiblingType,
-    /// Type import from parent module
-    ParentType,
-    /// Type import from internal module
-    InternalType,
-    /// Type import from built-in module
-    BuiltinType,
-    /// Type import from external module
-    ExternalType,
     /// Index file imports (`./`, `../`)
     Index,
     /// Sibling module imports (`./foo`)
@@ -134,12 +122,6 @@ impl ImportSelector {
             "side-effect-style" => Some(Self::SideEffectStyle),
             "side-effect" => Some(Self::SideEffect),
             "style" => Some(Self::Style),
-            "index-type" => Some(Self::IndexType),
-            "sibling-type" => Some(Self::SiblingType),
-            "parent-type" => Some(Self::ParentType),
-            "internal-type" => Some(Self::InternalType),
-            "builtin-type" => Some(Self::BuiltinType),
-            "external-type" => Some(Self::ExternalType),
             "index" => Some(Self::Index),
             "sibling" => Some(Self::Sibling),
             "parent" => Some(Self::Parent),
@@ -164,6 +146,8 @@ pub enum ImportModifier {
     Type,
     /// Value imports (non-type)
     Value,
+    /// Require imports
+    Require,
     /// Default specifier present
     Default,
     /// Namespace/wildcard specifier present (`* as`)
@@ -179,6 +163,7 @@ impl ImportModifier {
             "side-effect" => Some(Self::SideEffect),
             "type" => Some(Self::Type),
             "value" => Some(Self::Value),
+            "require" => Some(Self::Require),
             "default" => Some(Self::Default),
             "wildcard" => Some(Self::Wildcard),
             "named" => Some(Self::Named),
