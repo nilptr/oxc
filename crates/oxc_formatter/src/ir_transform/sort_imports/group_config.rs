@@ -1,3 +1,5 @@
+use crate::oxfmtrc::CustomGroupDefinition;
+use rustc_hash::{FxHashMap, FxHashSet};
 use std::cmp::Ordering;
 
 /// Parse groups from string-based configuration.
@@ -79,6 +81,11 @@ impl GroupName {
 
         Some(Self { modifiers, selector })
     }
+
+    /// check if this GroupName is one of the possible group names of the given import.
+    pub fn is_a_possible_name_of(&self, selectors: Vec<ImportSelector>, modifiers: Vec<ImportModifier>) -> bool {
+        selectors.contains(&self.selector) && self.modifiers.iter().all(|m| modifiers.contains(m))
+    }
 }
 
 impl PartialOrd for GroupName {
@@ -101,7 +108,7 @@ impl PartialOrd for GroupName {
 impl Ord for GroupName {
     fn cmp(&self, other: &Self) -> Ordering {
         match self.selector.cmp(&other.selector) {
-            Ordering::Equal => {},
+            Ordering::Equal => {}
             ord => return ord,
         }
         let self_modifier_cnt = self.modifiers.len();
@@ -259,5 +266,41 @@ impl ImportModifier {
             ImportModifier::Wildcard => "wildcard",
             ImportModifier::Named => "named",
         }
+    }
+}
+
+pub struct GroupMatcher {
+    custom_groups: Vec<(CustomGroupDefinition, usize)>,
+    predefined_groups: Vec<(GroupName, usize)>,
+}
+
+impl GroupMatcher {
+    pub fn new(groups: &Vec<Vec<String>>, custom_groups: &Vec<CustomGroupDefinition>) -> Self {
+        let custom_group_name_set =
+            FxHashSet::from_iter(custom_groups.iter().map(|g| g.name.clone()));
+
+        let mut used_custom_group_index_map = FxHashMap::default();
+        let mut predefined_groups = Vec::new();
+        for (idx, group_union) in groups.iter().enumerate() {
+            for group in group_union.iter() {
+                if custom_group_name_set.contains(group) {
+                    used_custom_group_index_map.insert(group.to_owned(), idx);
+                } else if let Some(group_name) = GroupName::parse(group) {
+                    predefined_groups.push((group_name, idx));
+                }
+            }
+        }
+
+        let mut used_custom_groups: Vec<(CustomGroupDefinition, usize)> =
+            Vec::with_capacity(used_custom_group_index_map.len());
+        for custom_group in custom_groups.iter() {
+            if let Some(idx) = used_custom_group_index_map.get(&custom_group.name) {
+                used_custom_groups.push((custom_group.clone(), *idx));
+            }
+        }
+
+        predefined_groups.sort_by(|a, b| a.0.cmp(&b.0));
+
+        Self { custom_groups: used_custom_groups, predefined_groups }
     }
 }

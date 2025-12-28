@@ -237,18 +237,18 @@ pub enum SortOrderConfig {
 #[serde(rename_all = "camelCase", default)]
 pub struct CustomGroupRule {
     #[serde(skip_serializing_if = "Option::is_none")]
-    selector: Option<String>,
+    pub selector: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    modifiers: Option<Vec<String>>,
+    pub modifiers: Option<Vec<String>>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    element_name_pattern: Option<String>,
+    pub element_name_pattern: Option<String>,
 }
 
 #[derive(Debug, Default, Clone, Eq, PartialEq, Deserialize, Serialize, JsonSchema)]
 #[serde(rename_all = "camelCase", default)]
 pub struct CustomGroupDefinition {
-    name: String,
-    any_of: Vec<CustomGroupRule>,
+    pub name: String,
+    pub any_of: Vec<CustomGroupRule>,
 }
 
 // ---
