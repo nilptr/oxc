@@ -83,7 +83,11 @@ impl GroupName {
     }
 
     /// check if this GroupName is one of the possible group names of the given import.
-    pub fn is_a_possible_name_of(&self, selectors: Vec<ImportSelector>, modifiers: Vec<ImportModifier>) -> bool {
+    pub fn is_a_possible_name_of(
+        &self,
+        selectors: Vec<ImportSelector>,
+        modifiers: Vec<ImportModifier>,
+    ) -> bool {
         selectors.contains(&self.selector) && self.modifiers.iter().all(|m| modifiers.contains(m))
     }
 }
@@ -270,14 +274,17 @@ impl ImportModifier {
 }
 
 pub struct GroupMatcher {
-    custom_groups: Vec<(CustomGroupDefinition, usize)>,
-    predefined_groups: Vec<(GroupName, usize)>,
+    pub custom_groups: Vec<(CustomGroupDefinition, usize)>,
+    pub predefined_groups: Vec<(GroupName, usize)>,
+    pub unknown_group_index: usize,
 }
 
 impl GroupMatcher {
     pub fn new(groups: &Vec<Vec<String>>, custom_groups: &Vec<CustomGroupDefinition>) -> Self {
         let custom_group_name_set =
             FxHashSet::from_iter(custom_groups.iter().map(|g| g.name.clone()));
+
+        let mut unknown_group_index: Option<usize> = None;
 
         let mut used_custom_group_index_map = FxHashMap::default();
         let mut predefined_groups = Vec::new();
@@ -286,6 +293,10 @@ impl GroupMatcher {
                 if custom_group_name_set.contains(group) {
                     used_custom_group_index_map.insert(group.to_owned(), idx);
                 } else if let Some(group_name) = GroupName::parse(group) {
+                    // TODO: should uknown be a ImportSelector?
+                    if group_name.is_plain_selector(ImportSelector::Unknown) {
+                        unknown_group_index = Some(idx);
+                    }
                     predefined_groups.push((group_name, idx));
                 }
             }
@@ -301,6 +312,10 @@ impl GroupMatcher {
 
         predefined_groups.sort_by(|a, b| a.0.cmp(&b.0));
 
-        Self { custom_groups: used_custom_groups, predefined_groups }
+        Self {
+            custom_groups: used_custom_groups,
+            predefined_groups,
+            unknown_group_index: unknown_group_index.unwrap_or(groups.len()),
+        }
     }
 }
