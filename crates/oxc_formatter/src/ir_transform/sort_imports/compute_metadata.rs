@@ -4,7 +4,7 @@ use cow_utils::CowUtils;
 use phf::phf_set;
 
 use crate::ir_transform::sort_imports::{
-    group_config::{GroupName, ImportModifier, ImportSelector},
+    group_config::{GroupMatcher, GroupName, ImportMetadata, ImportModifier, ImportSelector},
     options::SortImportsOptions,
     source_line::ImportLineMetadata,
 };
@@ -14,7 +14,7 @@ use crate::ir_transform::sort_imports::{
 /// Returns `(group_idx, normalized_source, is_ignored)`.
 pub fn compute_import_metadata<'a>(
     metadata: &ImportLineMetadata<'a>,
-    groups: &[Vec<GroupName>],
+    group_matcher: &GroupMatcher,
     options: &SortImportsOptions,
 ) -> (usize, Cow<'a, str>, bool) {
     let ImportLineMetadata {
@@ -41,7 +41,11 @@ pub fn compute_import_metadata<'a>(
         has_namespace_specifier: *has_namespace_specifier,
         has_named_specifier: *has_named_specifier,
     };
-    let group_idx = matcher.into_match_group_idx(groups);
+    let group_idx = group_matcher.compute_group_index(&ImportMetadata {
+        source,
+        selectors: matcher.compute_selectors(),
+        modifiers: matcher.compute_modifiers(),
+    });
 
     // Pre-compute normalized source for case-insensitive comparison
     let normalized_source =
@@ -53,18 +57,8 @@ pub fn compute_import_metadata<'a>(
     //   - Check if groups contain `side-effect` or `side-effect-style`
     //     - If yes, allow regrouping (not ignored)
     //     - If no, keep in original position (ignored)
-    let mut should_regroup_side_effect = false;
-    let mut should_regroup_side_effect_style = false;
-    for group in groups {
-        for name in group {
-            if name.is_plain_selector(ImportSelector::SideEffect) {
-                should_regroup_side_effect = true;
-            }
-            if name.is_plain_selector(ImportSelector::SideEffectStyle) {
-                should_regroup_side_effect_style = true;
-            }
-        }
-    }
+    let should_regroup_side_effect = group_matcher.should_regroup_side_effect();
+    let should_regroup_side_effect_style = group_matcher.should_regroup_side_effect_style();
 
     let is_ignored = !options.sort_side_effects
         && *is_side_effect
@@ -105,28 +99,8 @@ impl ImportGroupMatcher {
     /// - The index of the "unknown" group (if no match found and "unknown" is configured)
     /// - `groups.len()` (if no match found and no "unknown" group configured)
     #[must_use]
-    fn into_match_group_idx(self, groups: &[Vec<GroupName>]) -> usize {
-        let possible_names = self.compute_group_names();
-        let mut unknown_index = None;
-
-        // Try each possible name in order (most specific first)
-        for possible_name in &possible_names {
-            for (group_idx, group) in groups.iter().enumerate() {
-                for group_name in group {
-                    // Check if this is the "unknown" group
-                    if group_name.is_plain_selector(ImportSelector::Unknown) {
-                        unknown_index = Some(group_idx);
-                    }
-
-                    // Check if this possible name matches this group
-                    if possible_name == group_name {
-                        return group_idx;
-                    }
-                }
-            }
-        }
-
-        unknown_index.unwrap_or(groups.len())
+    fn into_match_group_idx(self, group_matcher: &GroupMatcher) -> usize {
+        0
     }
 
     /// Generate all possible group names for this import, ordered by specificity.
