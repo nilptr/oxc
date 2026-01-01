@@ -333,7 +333,8 @@ impl GroupMatcher {
         }
 
         for (group_name, index) in self.predefined_groups.iter() {
-            if group_name.is_a_possible_name_of(&import_metadata.selectors, &import_metadata.modifiers)
+            if group_name
+                .is_a_possible_name_of(&import_metadata.selectors, &import_metadata.modifiers)
             {
                 return *index;
             }
