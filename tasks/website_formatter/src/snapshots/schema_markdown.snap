@@ -1,5 +1,6 @@
 ---
 source: tasks/website_formatter/src/json_schema.rs
+assertion_line: 30
 expression: snapshot
 ---
 ---
@@ -80,6 +81,40 @@ Using the similar algorithm as [eslint-plugin-perfectionist/sort-imports](https:
 For details, see each field's documentation.
 
 - Default: Disabled
+
+
+### experimentalSortImports.customGroups
+
+type: `array`
+
+
+Define your own groups and use regex for matching very specific imports
+
+
+#### experimentalSortImports.customGroups[n]
+
+type: `object`
+
+
+
+
+
+##### experimentalSortImports.customGroups[n].elementNamePattern
+
+type: `string[]`
+
+default: `[]`
+
+
+
+
+##### experimentalSortImports.customGroups[n].groupName
+
+type: `string`
+
+default: `""`
+
+
 
 
 ### experimentalSortImports.groups
